@@ -6,14 +6,14 @@ load_dotenv()
 
 CHECKER_IP_SITE = os.getenv('CHECKER_IP_SITE')
 
-LOGIN = os.getenv('LOGIN_2')
-PASSWORD = os.getenv('PASSWORD_2')
+LOGIN = os.getenv('LOGIN_3')
+PASSWORD = os.getenv('PASSWORD_3')
 
-PROXY_IP = os.getenv('PROXY_IP_2')
-PROXY_LOG = os.getenv('PROXY_LOG_2')
-PROXY_PASS = os.getenv('PROXY_PASS_2')
+PROXY_IP = os.getenv('PROXY_IP_3')
+PROXY_LOG = os.getenv('PROXY_LOG_3')
+PROXY_PASS = os.getenv('PROXY_PASS_3')
 
-PROXY_PORT = os.getenv('PROXY_PORT_2')
+PROXY_PORT = os.getenv('PROXY_PORT_3')
 
 URL = os.getenv('URL')
 URL_GAME = URL + os.getenv('URL_GAME')

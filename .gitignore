@@ -1,5 +1,6 @@
 .vscode/
 env/
 .env
-.log
+*.log
 setup.cfg
+__pycache__/

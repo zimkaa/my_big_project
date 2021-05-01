@@ -10,8 +10,8 @@ from fight import fighting
 from request_to_nl import get_html, post_html, get_data, make_file
 
 
-logger.add("game_play.log", format="{time} {level} {message}", level="DEBUG",
-           rotation="1 day", compression="zip")
+# logger.add("game_play.log", format="{time} {level} {message}", level="DEBUG",
+#            rotation="1 day", compression="zip")
 
 
 REVERSE_WAYS = {
@@ -53,7 +53,7 @@ CHANGE_NAME_PORT = {
 
 def string_info(js_obj):
     """
-    Создаем строку для печати в логи
+    Create string to debug log
     """
     coord_x = js_obj['s']['x']
     coord_y = js_obj['s']['y']
@@ -87,13 +87,12 @@ def ways_to_door(connect, js_obj, way: str):
         js_obj = check_pickup(connect, json.loads(html.text))
         # js_obj = is_attack(connect, json.loads(html.text))
     else:
-        logger.debug(f"-----door-----NO CELL TO MOVING!!! DON'T UNDERSTAND \
-            WHY------'{way.upper()}'")
-        text = string_info(js_obj)
-        logger.debug(text)
-        # to drop traceback
-        go = stop
-        return js_obj
+        # logger.debug(f"-----door-----NO CELL TO MOVING!!! DON'T UNDERSTAND \
+        #     WHY------'{way.upper()}'")
+        # text = string_info(js_obj)
+        # logger.debug(text)
+        error = Exception("Boss!!!")
+        raise error
     return js_obj
 
 
@@ -117,13 +116,8 @@ def ways_to_port(connect, js_obj, way: str):
         sleep(5.5)
         js_obj = check_pickup(connect, json.loads(html.text))
     else:
-        logger.debug(f"----port------NO CELL TO MOVING!!! DON'T UNDERSTAND \
-            WHY------'{way.upper()}'")
-        text = string_info(js_obj)
-        logger.debug(text)
-        # to drop traceback
-        go = stop
-        return js_obj
+        error = Exception("Wrong-way to port")
+        raise error
     return js_obj
 
 

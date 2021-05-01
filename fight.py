@@ -10,10 +10,6 @@ from my_time import my_timer
 from request_to_nl import get_html, post_html, get_data, log_in, set_session
 
 
-logger.add("fight.log", format="{time} {level} {message}", level="DEBUG",
-           rotation="24 hour", compression="zip")
-
-
 def my_ip(proxies=None):
     """
     Получаем текущий IP сессии
@@ -1281,4 +1277,6 @@ def main():
 
 
 if __name__ == '__main__':
+    logger.add("fight.log", format="{time} {level} {message}", level="DEBUG",
+           rotation="24 hour", compression="zip")
     main()
