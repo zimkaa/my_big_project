@@ -19,14 +19,12 @@ def my_ip(proxies=None):
     return answer.text
 
 
-# @my_timer("parse_end_battle")
 def parse_end_battle(soup):
     """
     Create query to end battle
     """
     fexp = soup[5].replace('var fexp = ', '').replace('];', '')\
         .replace('"', '').replace('[', '').split(',')
-    # logger.info(f"------fexp-------\n{fexp}")
     data = {
         "get_id": "61",
         "act": "7",
@@ -41,7 +39,6 @@ def parse_end_battle(soup):
         "sum1": fexp[12],
         "sum2": fexp[13]
     }
-    # logger.info(f"-------end fight-------")
     return data
 
 
@@ -52,12 +49,9 @@ def use_mp(magic_in, alchemy, my_mp, ina, my_od, mp_need):
     not_alchemy = ["277", "207", "242", "208", "205", "206", "269", "270", "320"]
     magic = []
     for obj in magic_in:
-        # logger.info(f"obj {obj} type(obj) {type(obj)}")
         if obj not in not_alchemy:
             magic.append(obj)
-    # logger.info(f"magic {magic} my_od - {my_od}")
     if not magic:
-        # logger.info(f"not magic - {my_od}")
         return {"ina": ina, "my_od": my_od}
     dict_name_boost_mp = {
         'name': [
@@ -73,22 +67,17 @@ def use_mp(magic_in, alchemy, my_mp, ina, my_od, mp_need):
     query = []
     list_element = []
     for num, element in enumerate(magic):
-        # logger.info(f"num {num} element {element}")
         element = int(element)
-        # logger.info(f"type {type(element)}")
         for index in df.index:
             if df['code'][index] == element:
                 query.append(f"{element}_{alchemy[num]}@")
                 list_element.append(element)
-    # logger.info(list_element)
     new_df = pd.DataFrame()
     for name in list_element:
         result = df[df['code'] == name]
         new_df = new_df.append(result, ignore_index=True)
     new_df['query'] = query
     sorted_list = new_df.sort_values(by='priority')
-    # my_mp = 999
-    # mp_need = 1000
     if my_mp <= mp_need:
         boost_mp = 0
         query = ""
@@ -104,7 +93,6 @@ def use_mp(magic_in, alchemy, my_mp, ina, my_od, mp_need):
                 break
             else:
                 ina += query
-    # logger.debug(f"out of use_mp  ina - {ina} my_od - {my_od} ")
     return {"ina": ina, "my_od": my_od}
 
 
@@ -120,7 +108,6 @@ def get_warrior_magic(magic_in, ina, my_od, fight_pm):
     """
     Логика смотри какой удар возможен и делает его
     """
-    # logger.debug(f"start get_hit inu - {inu}")
     magic = {
         'name': [
             "Толчок", "Невероятная точность",
@@ -137,29 +124,17 @@ def get_warrior_magic(magic_in, ina, my_od, fight_pm):
         for index in magic_df.index:
             if magic_df['code'][index] == element:
                 list_element.append(element)
-    # logger.debug(f"list_element - {list_element}")
-    ina = ""
     fight_pm = int(fight_pm)
     for index in magic_df.index:
-        # logger.error(f"hit code - {stable_hits_df['code'][index]}")
-        # logger.error(f"my_od - {my_od}")
-        # logger.error(f"magic_df['od'][index] {magic_df['od'][index]}  {type(magic_df['od'][index])}")
         od = int(magic_df['od'][index])
         if magic_df['code'][index] in list_element:
             if my_od >= (fight_pm + od):
-                # logger.error(f"my_od >= (fight_pm + od - '{fight_pm + od}'")
                 ina += f"{magic_df['code'][index]}@"
                 my_od -= magic_df['od'][index]
-                # logger.error(f"fight_pm {fight_pm}  {type(fight_pm)}")
                 if my_od >= (fight_pm + 90) and magic_df['code'][index] == 478:
                     ina += "265@"
                     my_od -= 90
                 break
-    # logger.error(f"list_hits {list_hits}")
-    # logger.error(f"my_od {my_od}")
-    # logger.error(f"data {data}")
-
-    # logger.info(f"inu {inu} my_od {my_od} ")
     return {"my_od": my_od, "ina": ina}
 
 
@@ -209,12 +184,6 @@ def orc_25_hunter(lives_g1, magic_in, my_od, my_mp, alchemy, fight_pm):
     data_ues_mp = use_mp(magic_in, alchemy, my_mp, ina, my_od, need_mp)
     ina = data_ues_mp['ina']
     my_od = data_ues_mp['my_od']
-    # need_od = 90 + fight_pm
-    # if my_od >= need_od:
-    #     if "265" in magic_in:
-    #         ina += "265@"
-    #         logger.error("magic vimpir")
-    #         my_od -= 90
     fight_pm = int(fight_pm)
     data_magic = get_warrior_magic(magic_in, ina, my_od, fight_pm)
     ina = data_magic['ina']
@@ -246,27 +215,20 @@ def loginc(data):
     lives_g2 = data['lives_g2']
     magic_in = data['magic_in']
     alchemy = data['alchemy']
-    # {param_en[0]}
-    # name = param_en[0].encode('utf-8')
-    # for priroda
-    text = f"bot level lives_g1 - '{param_en[5]}' HP - '{lives_g1[2]}' - \
+    {param_en[0]}
+    name = param_en[0].encode('utf-8')
+    text = f"name {name} bot level lives_g1 - '{param_en[5]}' HP - '{lives_g1[2]}' - \
         OD - '{fight_pm[1]}' MP - '{param_ow[3]}' HP - '{param_ow[1]}'"
-    # for dange
-    # text = f"bot level lives_g2 - '{param_en[5]}' HP - '{lives_g2[2]}' - \
-    #     OD - '{fight_pm[1]}' MP - '{param_ow[3]}' HP - '{param_ow[1]}'"
     logger.error(text)
     my_od = Decimal(fight_pm[1])
-    # small_heal = Decimal(param_ow[2]) * Decimal(0.76)
     small_heal = Decimal(param_ow[2]) * Decimal(0.45)
     big_heal = Decimal(param_ow[2]) * Decimal(0.4)
     need_heel = Decimal(param_ow[2]) * Decimal(0.2)
     my_mp = Decimal(param_ow[3])
     my_hp = Decimal(param_ow[1])
-    # logger.debug(f"param_en[0 - {param_en[0]}")
     if param_en[0] == "Огр-защитник":
         logger.debug("orc 25")
         data = orc_25_hunter(lives_g1, magic_in, my_od, my_mp, alchemy, fight_pm[2])
-        # data = orc_25(lives_g1, magic_in, my_od, my_mp, alchemy)
         ina = data["ina"]
         inb = data["inb"]
         inu = data["inu"]
@@ -290,25 +252,15 @@ def loginc(data):
     return data
 
 
-# @logger.catch()
-# @my_timer("parse_fight")
 def parse_fight(soup):
     """
     Get data and start logic
     """
     elementos = soup.find(language="JavaScript")
-    # logger.info(f"------elementos-------\n{elementos}")
     text = str(elementos).split('\n')
-    # logger.info(f"------text-------\n{text}")
-    # if text[1] == 'var pg_id = 3;\r':
-    #     logger.info(f"------Шахта-------\n{text[1]}")
-    # logger.debug(f"len text - {len(text)}")
     if len(text) == 9:
-        # logger.info('end battle')
-        # logger.debug(f"len text end battle - {len(text)}")
         data = parse_end_battle(text)
         return data
-    # logger.debug("fight")
     fight_ty = text[1].replace('var fight_ty = ', '').replace('];', '')\
         .replace('"', '').replace('[', '').split(",")
     param_ow = text[2].replace('var param_ow = ', '').replace('];', '')\
@@ -325,8 +277,6 @@ def parse_fight(soup):
         .replace('[', '').replace('];', '').split(",")
     magic_in = text[8].replace('var magic_in = ', '').replace(';', '')\
         .replace('[', '').replace(']', '').split(",")
-    # log = text[14].replace('var logs = ', '').replace('];', '')\
-    #     .replace('"', '').replace('[', '').split(",")
     data_to_fight = {
         "fight_ty": fight_ty,
         "param_ow": param_ow,
@@ -341,12 +291,10 @@ def parse_fight(soup):
     return data
 
 
-# @my_timer("fighting")
 def fighting(connect, html, fight=True):
     """
     Start fight
     """
-    # logger.info("-------start fight-------")
     if fight:
         number_iteration = 0
         while fight:
@@ -354,8 +302,6 @@ def fighting(connect, html, fight=True):
             html = data['html']
             fight = data['stop']
             number_iteration += 1
-            # logger.info(f"number_iteration fight=True \
-            #     {number_iteration} fight= {fight}")
     else:
         number_iteration = 0
         while number_iteration < 1:
@@ -365,7 +311,6 @@ def fighting(connect, html, fight=True):
             if not fight:
                 number_iteration = 100
             number_iteration += 1
-            # logger.info(f"number_iteration fight=False {number_iteration}")
     return html
 
 
@@ -377,7 +322,6 @@ def stop_or_hit(connect, html):
     data = parse_fight(soup)
     url = config.URL_MAIN
     if "post_id" in data.keys():
-        # logger.info("post request for hit")
         html = post_html(connect, url, config.HEADER, config.PROXYES, data)
         stop = True
     else:
@@ -387,7 +331,6 @@ def stop_or_hit(connect, html):
     return {"html": html, "stop": stop}
 
 
-# @my_timer("main")
 def main():
     ip = my_ip(config.PROXYES)
     logger.info(f"-------ip------- {ip}")
@@ -395,8 +338,8 @@ def main():
         logger.info("ip IS proxy YES")
         connect = set_session()
         html = log_in(connect)
-        fighting(connect, html, False)
-        # fighting(connect, html)
+        # fighting(connect, html, False)
+        fighting(connect, html)
 
 
 if __name__ == '__main__':
