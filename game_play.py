@@ -6,8 +6,9 @@ from time import sleep
 from loguru import logger
 
 import config
-from fight import fighting
-from request_to_nl import get_html, post_html, get_data, make_file
+# from fight import fighting
+from fight_dangeon_24 import fighting
+from request_to_nl import get_html, post_html, get_data
 
 
 # logger.add("game_play.log", format="{time} {level} {message}", level="DEBUG",
@@ -85,7 +86,15 @@ def ways_to_door(connect, js_obj, way: str):
         html = post_html(connect, url, config.HEADER, config.PROXYES)
         sleep(5.5)
         js_obj = check_pickup(connect, json.loads(html.text))
-        # js_obj = is_attack(connect, json.loads(html.text))
+        if js_obj['a'].get('attack'):
+            """
+            Поднимаем ХП
+            """
+            html = get_html(connect, config.URL_MAIN,
+                            config.HEADER, config.PROXYES)
+            js_obj = restoring_mana_and_hp(connect, html)
+
+            js_obj = is_attack(connect, js_obj)
     else:
         # logger.debug(f"-----door-----NO CELL TO MOVING!!! DON'T UNDERSTAND \
         #     WHY------'{way.upper()}'")
@@ -160,15 +169,14 @@ def restoring_mana_and_hp(connect, html):
     my_max_mp = Decimal(inshp[3])
     my_hp = Decimal(inshp[0])
     my_mp = Decimal(inshp[2])
-    # one_fourth_hp = my_max_hp * Decimal(0.90)
-    one_fourth_hp = my_max_hp * Decimal(0.50)
-    one_fourth_mp = my_max_mp * Decimal(0.20)
+    min_hp = my_max_hp * Decimal(0.50)
+    min_mp = my_max_mp * Decimal(0.90)
     count_hp = 0
     count_mp = 0
-    if my_hp <= one_fourth_hp:
-        count_hp = Decimal((one_fourth_hp - my_hp) / 100).quantize(Decimal('1'))
-    if my_mp <= one_fourth_mp:
-        count_mp = Decimal((one_fourth_mp - my_mp) / 100).quantize(Decimal('1'))
+    if my_hp <= min_hp:
+        count_hp = Decimal((min_hp - my_hp) / 500).quantize(Decimal('1'))
+    if my_mp <= min_mp:
+        count_mp = Decimal((min_mp - my_mp) / 500).quantize(Decimal('1'))
     if count_hp >= count_mp:
         count = count_hp
     else:
@@ -179,21 +187,21 @@ def restoring_mana_and_hp(connect, html):
         logger.error(f"count {count}")
         js_obj = get_satatus(connect, html)
         for _ in range(int(count)):
-            # key = "useWeapon.w27_521"  # BIG MP!!!
-            key = "useWeapon.w27_309"  # 309 --- Зелье Энергии
+            key = "useWeapon.w27_521"  # BIG MP!!!
+            # key = "useWeapon.w27_309"  # 309 --- Зелье Энергии
             js_obj['a'][key]
             item = key.replace('useWeapon.', '')
             vcode = js_obj['a'].get(key)
             url_part = f"?type=dungeon&action=useWeapon&item={item}&vcode={vcode}"
             url = config.URL_EVENT + url_part
             html = post_html(connect, url, config.HEADER, config.PROXYES)
-            # logger.error("use weapon useWeapon.w27_521 BIG MP!!!")
-            logger.error("use weapon useWeapon.w27_309 potion energy!!!")
-            js_obj = json.loads(html.text)
+            logger.error("use weapon useWeapon.w27_521 BIG MP!!!")
+            # logger.error("use weapon useWeapon.w27_309 potion energy!!!")
+            # js_obj = json.loads(html.text)
     else:
         logger.error(f"not count {count}")
-        js_obj = get_satatus(connect, html)
-    return js_obj
+        # js_obj = get_satatus(connect, html)
+    return html
 
 
 def is_attack(connect, js_obj):
@@ -210,15 +218,9 @@ def is_attack(connect, js_obj):
                         config.HEADER, config.PROXYES)
         html = fighting(connect, html)
 
-        """
-        Поднимаем ХП до макса
-        """
-        html = get_html(connect, config.URL_MAIN,
-                        config.HEADER, config.PROXYES)
-        js_obj = restoring_mana_and_hp(connect, html)
+        ####
 
-
-        # js_obj = get_satatus(connect, html)
+        js_obj = get_satatus(connect, html)
         js_obj = check_pickup(connect, js_obj)
         js_obj = check_pickup(connect, js_obj)
         return js_obj
@@ -694,7 +696,7 @@ def game(connect, html):
     #     dict_weapons[value['name']] = {"use": key, 'count': value['count']}
     # logger.error(f"dict_weapons - '{dict_weapons}'")
 
-    while floor < config.FLOOR:
+    while floor < int(config.FLOOR):
     # while floor < 8:
         map_to_go = create_map()
         map_to_port = create_map()

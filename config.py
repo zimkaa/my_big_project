@@ -24,7 +24,6 @@ HOME_DIR = os.getenv('HOME_DIR')
 
 FLOOR = os.getenv('FLOOR')
 
-
 HEADER = {
     "accept": "*/*",
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/\

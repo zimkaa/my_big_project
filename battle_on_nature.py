@@ -184,21 +184,21 @@ def orc_25_hunter(lives_g1, magic_in, my_od, my_mp, alchemy, fight_pm):
     data_ues_mp = use_mp(magic_in, alchemy, my_mp, ina, my_od, need_mp)
     ina = data_ues_mp['ina']
     my_od = data_ues_mp['my_od']
-    fight_pm = int(fight_pm)
-    data_magic = get_warrior_magic(magic_in, ina, my_od, fight_pm)
+    simple = int(fight_pm)
+    pinpoint = simple + 20
+    data_magic = get_warrior_magic(magic_in, ina, my_od, simple)
     ina = data_magic['ina']
     my_od = data_magic['my_od']
-
     stable_warrior_hits = {
         'name': [
             "Прицельный", "Простой"
         ],
         'code': [1, 0],
         'mp_cost': [0, 0],
-        'od': [fight_pm + 20, fight_pm]
+        'od': [pinpoint, simple]
     }
     stable_warrior_hits_df = pd.DataFrame(stable_warrior_hits)
-    data_simple_hit = get_simple_warrior_hit(fight_pm, my_od, stable_warrior_hits_df)
+    data_simple_hit = get_simple_warrior_hit(simple, my_od, stable_warrior_hits_df)
     my_od = data_simple_hit['my_od']
     list_hits = data_simple_hit['hits']
     inu = get_query(list_hits, stable_warrior_hits_df)
@@ -215,8 +215,9 @@ def loginc(data):
     lives_g2 = data['lives_g2']
     magic_in = data['magic_in']
     alchemy = data['alchemy']
-    {param_en[0]}
-    name = param_en[0].encode('utf-8')
+    # {param_en[0]}
+    # name = param_en[0].encode('utf-8')
+    name = ""
     text = f"name {name} bot level lives_g1 - '{param_en[5]}' HP - '{lives_g1[2]}' - \
         OD - '{fight_pm[1]}' MP - '{param_ow[3]}' HP - '{param_ow[1]}'"
     logger.error(text)
@@ -343,6 +344,6 @@ def main():
 
 
 if __name__ == '__main__':
-    logger.add("fight.log", format="{time} {level} {message}", level="DEBUG",
+    logger.add("fight_nature.log", format="{time} {level} {message}", level="DEBUG",
                rotation="24 hour", compression="zip")
     main()
