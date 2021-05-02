@@ -55,22 +55,19 @@ def log_in(connect):
     logger.add("requests.log", format="{time} {level} {message}",
                level="DEBUG", rotation="10 MB", compression="zip")
     now = datetime.now().strftime('%d-%m-%Y')
-    if os.path.exists(os.path.join(os.getcwd(), f"{config.HOME_DIR}\\{now}.txt")):
+    name = f"{config.HOME_DIR}\\{now}.txt"
+    if os.path.exists(os.path.join(os.getcwd(), name):
         logger.error("I'am using cookies")
         string = ""
-        with open(f"{config.HOME_DIR}\\{now}.txt", "r", encoding="cp1251") as data:
+        with open(name, "r", encoding="cp1251") as data:
             for line in data:
-                # logger.error(line)
                 string += line
-            # logger.error(f"string ------------------------ {string}  type {type(string)}")
             dict2 = eval(string)
-            # logger.error(f"dict2 ------------------------ {dict2}")
         for cookies in dict2:
             connect.cookies.set(**cookies)
         html = get_html(
             connect, config.URL_MAIN, config.HEADER, config.PROXYES,
         )
-        # logger.error(f"html ------------------------ {html.text}")
     else:
         logger.error("First loging for day")
         get_html(connect, config.URL, config.HEADER, config.PROXYES)
@@ -82,12 +79,10 @@ def log_in(connect):
             {"domain": key.domain, "name": key.name, "path": key.path, "value": key.value}
             for key in connect.cookies
         ]
-        # logger.error(f"cookies_dict ------------------------ {cookies_dict}")
         make_file(str(cookies_dict), "cookies")
         html = get_html(
             connect, config.URL_MAIN, config.HEADER, config.PROXYES,
         )
-    print(f"html ------------------------ {html.text}")
     return html
 
 
