@@ -697,6 +697,7 @@ def stop_or_hit(connect, html):
     """
     Проверяем закончен ли бой
     """
+    # logger.error(f"html  ---\n{html.text}")
     soup = get_data(html)
     data = parse_fight(soup)
     url = config.URL_MAIN

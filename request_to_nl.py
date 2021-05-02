@@ -1,5 +1,7 @@
 from bs4 import BeautifulSoup
 from datetime import datetime
+from loguru import logger
+import os
 import requests
 import config
 
@@ -50,11 +52,42 @@ def log_in(connect):
     """
     Возвращает текст в виде джейсон текста после логина
     """
-    get_html(connect, config.URL, config.HEADER, config.PROXYES)
-    post_html(connect, config.URL_GAME, config.HEADER,
-              config.PROXYES, config.DATA)
-    html = get_html(connect, config.URL_MAIN, config.HEADER, config.PROXYES)
-    # make_file(html.text, "log_in_main")
+    logger.add("requests.log", format="{time} {level} {message}",
+               level="DEBUG", rotation="10 MB", compression="zip")
+    now = datetime.now().strftime('%d-%m-%Y')
+    if os.path.exists(os.path.join(os.getcwd(), f"{config.HOME_DIR}\\{now}.txt")):
+        logger.error("I'am using cookies")
+        string = ""
+        with open(f"{config.HOME_DIR}\\{now}.txt", "r", encoding="cp1251") as data:
+            for line in data:
+                # logger.error(line)
+                string += line
+            # logger.error(f"string ------------------------ {string}  type {type(string)}")
+            dict2 = eval(string)
+            # logger.error(f"dict2 ------------------------ {dict2}")
+        for cookies in dict2:
+            connect.cookies.set(**cookies)
+        html = get_html(
+            connect, config.URL_MAIN, config.HEADER, config.PROXYES,
+        )
+        # logger.error(f"html ------------------------ {html.text}")
+    else:
+        logger.error("First loging for day")
+        get_html(connect, config.URL, config.HEADER, config.PROXYES)
+        post_html(
+            connect, config.URL_GAME, config.HEADER,
+            config.PROXYES, config.DATA,
+        )
+        cookies_dict = [
+            {"domain": key.domain, "name": key.name, "path": key.path, "value": key.value}
+            for key in connect.cookies
+        ]
+        # logger.error(f"cookies_dict ------------------------ {cookies_dict}")
+        make_file(str(cookies_dict), "cookies")
+        html = get_html(
+            connect, config.URL_MAIN, config.HEADER, config.PROXYES,
+        )
+    print(f"html ------------------------ {html.text}")
     return html
 
 
@@ -62,6 +95,6 @@ def make_file(answer, name):
     """
     Сохраняем результат в файл для дальнейшей оценки
     """
-    now = datetime.now().strftime('%H-%M-%S')
-    with open(f"{config.HOME_DIR}\\{now}_{name}.txt", "w", encoding="utf-8") as file:
+    now = datetime.now().strftime('%d-%m-%Y')
+    with open(f"{config.HOME_DIR}\\{now}.txt", "w", encoding="cp1251") as file:
         file.write(answer)

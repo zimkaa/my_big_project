@@ -4,3 +4,5 @@ env/
 *.log
 setup.cfg
 __pycache__/
+cookies/
+*.zip

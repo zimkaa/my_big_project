@@ -561,6 +561,7 @@ def check_portal(js_obj, portal: bool, map_to_port: list, way: str) -> dict:
     """
     if not portal:
         if js_obj['s'].get('portal'):
+            """ на карте "v":11  """
             portal = True
             my_coord = get_my_coord(js_obj)
             # add_way_portal = {'x': my_coord['x'], 'y': my_coord['y'], 'p': 'No'}
