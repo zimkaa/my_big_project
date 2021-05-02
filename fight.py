@@ -49,15 +49,12 @@ def use_mp(magic_in, alchemy, my_mp, ina, my_od, mp_need):
     """
     Логика смотрит что выпить с пояса при определенном количестве маны пока жестко меньше 1к
     """
-    not_alchemy = ["277", "207", "242", "208", "205", "206", "269", "270", "320"]
+    not_alchemy = ["279", "277", "207", "242", "208", "205", "206", "269", "270", "320", '375', '376', '381', '382', '477', '478', '479', '483', '482', '265', '266']
     magic = []
     for obj in magic_in:
-        # logger.info(f"obj {obj} type(obj) {type(obj)}")
         if obj not in not_alchemy:
             magic.append(obj)
-    # logger.info(f"magic {magic} my_od - {my_od}")
     if not magic:
-        # logger.info(f"not magic - {my_od}")
         return {"ina": ina, "my_od": my_od}
     dict_name_boost_mp = {
         'name': [
@@ -72,39 +69,41 @@ def use_mp(magic_in, alchemy, my_mp, ina, my_od, mp_need):
     df = pd.DataFrame(dict_name_boost_mp)
     query = []
     list_element = []
+    # logger.info(f"magic - {magic} len m - {len(magic)}")
     for num, element in enumerate(magic):
-        # logger.info(f"num {num} element {element}")
         element = int(element)
-        # logger.info(f"type {type(element)}")
         for index in df.index:
             if df['code'][index] == element:
                 query.append(f"{element}_{alchemy[num]}@")
                 list_element.append(element)
-    # logger.info(list_element)
     new_df = pd.DataFrame()
     for name in list_element:
+        # result = None
         result = df[df['code'] == name]
+        # if result:
+        #     new_df = new_df.append(result, ignore_index=True)
         new_df = new_df.append(result, ignore_index=True)
     new_df['query'] = query
-    sorted_list = new_df.sort_values(by='priority')
-    # my_mp = 999
-    # mp_need = 1000
+    sorted_list_df = new_df.sort_values(by='priority')
     if my_mp <= mp_need:
+        logger.info("---------------Use MP--------------------")
         boost_mp = 0
-        query = ""
-        for index in sorted_list.index:
-            boost_mp += sorted_list['mp_boost'][index]
-            query += sorted_list['query'][index]
-            condition = boost_mp - mp_need
-            logger.info(f"b my_od - {my_od}")
-            my_od -= sorted_list['od'][index]
-            logger.info(f"a my_od - {my_od}")
+        query_mp = ""
+        for index in sorted_list_df.index:
+            # logger.info(f"before boost_mp - {boost_mp}")
+            boost_mp += int(sorted_list_df['mp_boost'][index])
+            # logger.info(f"after boost_mp - {boost_mp}")
+            query_mp = sorted_list_df['query'][index]
+            condition = int(boost_mp) - mp_need
+            # logger.info(f"before my_od - {my_od}")
+            my_od -= int(sorted_list_df['od'][index])
+            # logger.info(f"after my_od - {my_od}")
             if condition >= 0 and my_od <= 30:
-                ina += query
+                ina += query_mp
                 break
             else:
-                ina += query
-    # logger.debug(f"out of use_mp  ina - {ina} my_od - {my_od} ")
+                ina += query_mp
+        logger.info(f"ina _ mp - {ina}")
     return {"ina": ina, "my_od": my_od}
 
 
