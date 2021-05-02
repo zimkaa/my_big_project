@@ -56,7 +56,7 @@ def log_in(connect):
                level="DEBUG", rotation="10 MB", compression="zip")
     now = datetime.now().strftime('%d-%m-%Y')
     name = f"{config.HOME_DIR}\\{now}.txt"
-    if os.path.exists(os.path.join(os.getcwd(), name):
+    if os.path.exists(os.path.join(os.getcwd(), name)):
         logger.error("I'am using cookies")
         string = ""
         with open(name, "r", encoding="cp1251") as data:
