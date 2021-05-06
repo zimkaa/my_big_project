@@ -1276,6 +1276,8 @@ def main():
 
 
 if __name__ == '__main__':
-    logger.add("fight.log", format="{time} {level} {message}", level="DEBUG",
-           rotation="24 hour", compression="zip")
+    logger.add(
+        "fight_dangeon.log", format="{time} {level} {message}",
+        level="DEBUG", rotation="24 hour", compression="zip",
+    )
     main()
