@@ -35,16 +35,21 @@ def parse_end_battle(soup):
         "min2": fexp[10],
         "max2": fexp[11],
         "sum1": fexp[12],
-        "sum2": fexp[13]
+        "sum2": fexp[13],
     }
     return data
 
 
 def use_mp(magic_in, alchemy, my_mp, ina, my_od, mp_need):
     """
-    Логика смотрит что выпить с пояса при определенном количестве маны пока жестко меньше 1к
+    Логика смотрит что выпить с пояса при определенном количестве маны
+    пока жестко меньше 1к
     """
-    not_alchemy = ["279", "277", "207", "242", "208", "205", "206", "269", "270", "320", '375', '376', '381', '382', '477', '478', '479', '483', '482', '265', '266']
+    not_alchemy = [
+        "279", "277", "207", "242", "208", "205", "206", "269", "270", "320",
+        "375", "376", "381", "382", "477", "478", "479", "483", "482", "265",
+        "266",
+    ]
     magic = []
     for obj in magic_in:
         if obj not in not_alchemy:
@@ -54,12 +59,12 @@ def use_mp(magic_in, alchemy, my_mp, ina, my_od, mp_need):
     dict_name_boost_mp = {
         'name': [
             "Тыквенное зелье", "Превосходное Зелье Маны",
-            "Зелье Восстановления Маны", "Восстановление MP"
+            "Зелье Восстановления Маны", "Восстановление MP",
         ],
         'code': [337, 521, 306, 33],
         'priority': [0, 1, 2, 3],
         'mp_boost': [999, 500, 100, 50],
-        'od': [30, 30, 30, 30]
+        'od': [30, 30, 30, 30],
     }
     df = pd.DataFrame(dict_name_boost_mp)
     query = []
@@ -147,7 +152,8 @@ def get_simple_warrior_hit(my_od, df):
     return {"my_od": my_od, "hits": list_hits}
 
 
-def arhi_lich_warrior(lives_g2, magic_in, my_od, my_mp, alchemy, fight_pm, bot_lvl):
+def arhi_lich_warrior(lives_g2, magic_in, my_od, my_mp,
+                      alchemy, fight_pm, bot_lvl, my_hp, need_hp):
     max_number_iter = int(len(lives_g2) / 5)
     number_iter = 2
     hp_bots = []
@@ -159,33 +165,38 @@ def arhi_lich_warrior(lives_g2, magic_in, my_od, my_mp, alchemy, fight_pm, bot_l
     ina = ""
     inb = ""
     inu = ""
-    my_od -= 30
-    if my_mp <= 900:
-        logger.info(" my_mp < 500")
-        ina = f"521_{alchemy[0]}@521_{alchemy[1]}@521_{alchemy[2]}@"
-        my_od -= 90
+    # if my_mp <= 900:
+    #     logger.info(" my_mp < 500")
+    #     ina = f"521_{alchemy[0]}@521_{alchemy[1]}@521_{alchemy[2]}@"
+    #     my_od -= 90
+    need_mp = 900
+    data_use_mp = use_mp(magic_in, alchemy, my_mp, ina, my_od, need_mp)
+    ina = data_use_mp['ina']
+    my_od = data_use_mp['my_od']
     bot_lvl = int(bot_lvl)
     if bot_lvl >= 30:
         stable_mag_hits = {
             'name': [
-                "Mind Blast", "Spirit Arrow"
+                "Mind Blast", "Spirit Arrow",
             ],
             'code': [3, 2],
             'mp_cost': [300, 300],
-            'od': [90, 50]
+            'od': [90, 50],
         }
     else:
         stable_mag_hits = {
             'name': [
-                "Mind Blast", "Spirit Arrow"
+                "Mind Blast", "Spirit Arrow",
             ],
             'code': [3, 2],
             'mp_cost': [5, 5],
-            'od': [90, 50]
+            'od': [90, 50],
         }
     df = pd.DataFrame(stable_mag_hits)
-    fight_pm = int(df['od'][0])
-    data_magic = get_warrior_magic(magic_in, ina, my_od, fight_pm)
+    fight_pm = int(df['od'][1])
+    data_magic = get_warrior_magic_hp(
+        magic_in, ina, my_od, fight_pm, my_hp, need_hp,
+    )
     ina = data_magic['ina']
     my_od = data_magic['my_od']
     data_simple_hit = get_simple_warrior_hit(my_od, stable_mag_hits)
@@ -194,6 +205,16 @@ def arhi_lich_warrior(lives_g2, magic_in, my_od, my_mp, alchemy, fight_pm, bot_l
     # logger.debug(f"list_hits {list_hits}")
     # logger.debug(f"stable_mag_hits {df}")
     inu = get_query(list_hits, df)
+
+    if my_mp < 100:
+        logger.error("NEED TO STOP my_mp < 100")
+        logger.error("NEED TO STOP my_mp < 100")
+        logger.error("NEED TO STOP my_mp < 100")
+        logger.error("NEED TO STOP my_mp < 100")
+        logger.error("NEED TO STOP my_mp < 100")
+        error = Exception("MPPPP!!!!")
+        raise error
+
     return {"inu": inu, "ina": ina, "inb": inb}
 
 
@@ -205,11 +226,11 @@ def zombie_warrior(my_od, fight_pm):
     pinpoint = simple + 20
     stable_warrior_hits = {
         'name': [
-            "Прицельный", "Простой"
+            "Прицельный", "Простой",
         ],
         'code': [1, 0],
         'mp_cost': [0, 0],
-        'od': [pinpoint, simple]
+        'od': [pinpoint, simple],
     }
     stable_warrior_hits_df = pd.DataFrame(stable_warrior_hits)
     data_simple_hit = get_simple_warrior_hit(my_od, stable_warrior_hits_df)
@@ -219,7 +240,8 @@ def zombie_warrior(my_od, fight_pm):
     return {"inu": inu, "ina": ina, "inb": inb}
 
 
-def arhi_paladin_for_warrior(lives_g2, magic_in, my_od, my_mp, alchemy, fight_pm):
+def arhi_paladin_for_warrior(lives_g2, magic_in, my_od, my_mp,
+                             alchemy, fight_pm, my_hp, need_hp):
     max_number_iter = int(len(lives_g2) / 5)
     number_iter = 2
     hp_bots = []
@@ -228,32 +250,43 @@ def arhi_paladin_for_warrior(lives_g2, magic_in, my_od, my_mp, alchemy, fight_pm
         number_iter += 5
     if len(hp_bots) > 1:
         logger.error(f"priziv - {hp_bots}")
-    ina = "320@"
+    ina = ""
     inb = ""
     inu = ""
-    my_od -= 30
-    need_mp = 100     # -----------------------------------------------------
+    need_mp = 400
     data_ues_mp = use_mp(magic_in, alchemy, my_mp, ina, my_od, need_mp)
     ina = data_ues_mp['ina']
     my_od = data_ues_mp['my_od']
     simple = int(fight_pm)
     pinpoint = simple + 20
-    data_magic = get_warrior_magic(magic_in, ina, my_od, simple)
+    data_magic = get_warrior_magic_hp(
+        magic_in, ina, my_od, simple, my_hp, need_hp,
+    )
     ina = data_magic['ina']
     my_od = data_magic['my_od']
     stable_warrior_hits = {
         'name': [
-            "Прицельный", "Простой"
+            "Прицельный", "Простой",
         ],
         'code': [1, 0],
         'mp_cost': [0, 0],
-        'od': [pinpoint, simple]
+        'od': [pinpoint, simple],
     }
     stable_warrior_hits_df = pd.DataFrame(stable_warrior_hits)
     data_simple_hit = get_simple_warrior_hit(my_od, stable_warrior_hits_df)
     my_od = data_simple_hit['my_od']
     list_hits = data_simple_hit['hits']
     inu = get_query(list_hits, stable_warrior_hits_df)
+
+    if my_mp < 100:
+        logger.error("NEED TO STOP my_mp < 100")
+        logger.error("NEED TO STOP my_mp < 100")
+        logger.error("NEED TO STOP my_mp < 100")
+        logger.error("NEED TO STOP my_mp < 100")
+        logger.error("NEED TO STOP my_mp < 100")
+        error = Exception("MPPPP!!!!")
+        raise error
+
     return {"inu": inu, "ina": ina, "inb": inb}
 
 
@@ -346,33 +379,97 @@ def get_warrior_magic_hp(magic_in, ina, my_od, fight_pm, my_hp, need_hp):
     return {"my_od": my_od, "ina": ina}
 
 
-def guard_for_warrior(magic_in, my_od, my_mp, alchemy, fight_pm, my_hp, need_hp):
-    ina = "320@"
+def guard_for_warrior(magic_in, my_od, my_mp, alchemy,
+                      fight_pm, my_hp, need_hp):
+    ina = ""
     inb = ""
     inu = ""
-    my_od -= 30
-    need_mp = 100     # -----------------------------------------------------
+    need_mp = 300
     data_ues_mp = use_mp(magic_in, alchemy, my_mp, ina, my_od, need_mp)
     ina = data_ues_mp['ina']
     my_od = data_ues_mp['my_od']
     simple = int(fight_pm)
     pinpoint = simple + 20
-    data_magic = get_warrior_magic_hp(magic_in, ina, my_od, simple, my_hp, need_hp)
+    data_magic = get_warrior_magic_hp(
+        magic_in, ina, my_od, simple, my_hp, need_hp,
+    )
     ina = data_magic['ina']
     my_od = data_magic['my_od']
     stable_warrior_hits = {
         'name': [
-            "Прицельный", "Простой"
+            "Прицельный", "Простой",
         ],
         'code': [1, 0],
         'mp_cost': [0, 0],
-        'od': [pinpoint, simple]
+        'od': [pinpoint, simple],
     }
     stable_warrior_hits_df = pd.DataFrame(stable_warrior_hits)
     data_simple_hit = get_simple_warrior_hit(my_od, stable_warrior_hits_df)
     my_od = data_simple_hit['my_od']
     list_hits = data_simple_hit['hits']
     inu = get_query(list_hits, stable_warrior_hits_df)
+
+    if my_mp < 100:
+        logger.error("NEED TO STOP my_mp < 100")
+        logger.error("NEED TO STOP my_mp < 100")
+        logger.error("NEED TO STOP my_mp < 100")
+        logger.error("NEED TO STOP my_mp < 100")
+        logger.error("NEED TO STOP my_mp < 100")
+        error = Exception("MPPPP!!!!")
+        raise error
+
+    return {"inu": inu, "ina": ina, "inb": inb}
+
+
+def any_bot(lives_g1, magic_in, my_od, my_mp,
+            alchemy, lives_g2, fight_pm, my_hp, need_hp):
+    if int(len(lives_g1)) == 8:
+        max_number_iter = int(len(lives_g2) / 5)
+    else:
+        max_number_iter = int(len(lives_g1) / 5)
+    number_iter = 2
+    hp_bots = []
+    for _ in range(max_number_iter):
+        hp_bots.append(lives_g1[number_iter])
+        number_iter += 5
+    logger.error(f"hp_bots - {hp_bots}")
+    ina = ""
+    inb = ""
+    inu = ""
+    need_mp = 300
+    data_ues_mp = use_mp(magic_in, alchemy, my_mp, ina, my_od, need_mp)
+    ina = data_ues_mp['ina']
+    my_od = data_ues_mp['my_od']
+    simple = int(fight_pm)
+    pinpoint = simple + 20
+    data_magic = get_warrior_magic_hp(
+        magic_in, ina, my_od, simple, my_hp, need_hp,
+    )
+    ina = data_magic['ina']
+    my_od = data_magic['my_od']
+    stable_warrior_hits = {
+        'name': [
+            "Прицельный", "Простой",
+        ],
+        'code': [1, 0],
+        'mp_cost': [0, 0],
+        'od': [pinpoint, simple],
+    }
+    stable_warrior_hits_df = pd.DataFrame(stable_warrior_hits)
+    data_simple_hit = get_simple_warrior_hit(my_od, stable_warrior_hits_df)
+    my_od = data_simple_hit['my_od']
+    list_hits = data_simple_hit['hits']
+    inu = get_query(list_hits, stable_warrior_hits_df)
+
+    if my_mp < 100:
+        logger.error("NEED TO STOP my_mp < 100")
+        logger.error("NEED TO STOP my_mp < 100")
+        logger.error("NEED TO STOP my_mp < 100")
+        logger.error("NEED TO STOP my_mp < 100")
+        logger.error("NEED TO STOP my_mp < 100")
+        error = Exception("MPPPP!!!!")
+        raise error
+
     return {"inu": inu, "ina": ina, "inb": inb}
 
 
@@ -407,14 +504,19 @@ def loginc(data):
     my_hp = Decimal(param_ow[1])
     if param_en[0] == "Паладин Мортиуса":
         logger.debug("arhi_paladin")
-        # data = arhi_paladin_mag(lives_g2, magic_in, my_od, my_mp, alchemy, my_hp, small_heal)
-        data = arhi_paladin_for_warrior(lives_g2, magic_in, my_od, my_mp, alchemy, fight_pm[2])
+        data = arhi_paladin_for_warrior(
+            lives_g2, magic_in, my_od, my_mp,
+            alchemy, fight_pm[2], my_hp, need_hp,
+        )
         ina = data["ina"]
         inb = data["inb"]
         inu = data["inu"]
     elif param_en[0] == "Лич":
         logger.debug("arhi_lich")
-        data = arhi_lich_warrior(lives_g2, magic_in, my_od, my_mp, alchemy, fight_pm[2], param_en[5])
+        data = arhi_lich_warrior(
+            lives_g2, magic_in, my_od, my_mp, alchemy,
+            fight_pm[2], param_en[5], my_hp, need_hp,
+        )
         ina = data["ina"]
         inb = data["inb"]
         inu = data["inu"]
@@ -426,13 +528,18 @@ def loginc(data):
         inu = data["inu"]
     elif param_en[0] == "Страж крипты":
         logger.debug("guard")
-        data = guard_for_warrior(magic_in, my_od, my_mp, alchemy, fight_pm[2], my_hp, need_hp)
+        data = guard_for_warrior(
+            magic_in, my_od, my_mp, alchemy, fight_pm[2], my_hp, need_hp,
+        )
         ina = data["ina"]
         inb = data["inb"]
         inu = data["inu"]
     else:
         logger.debug("any_bot")
-        data = any_bot(lives_g1, magic_in, my_od, my_mp, alchemy, lives_g2)
+        data = any_bot(
+            lives_g1, magic_in, my_od, my_mp, alchemy,
+            lives_g2, fight_pm, my_hp, need_hp,
+        )
         ina = data["ina"]
         inb = data["inb"]
         inu = data["inu"]
@@ -450,7 +557,7 @@ def loginc(data):
         "ftr": fight_ty[2],
         "inu": inu,
         "inb": inb,
-        "ina": ina
+        "ina": ina,
     }
     return data
 
@@ -489,7 +596,7 @@ def parse_fight(soup):
         "lives_g1": lives_g1,
         "lives_g2": lives_g2,
         "magic_in": magic_in,
-        "alchemy": alchemy
+        "alchemy": alchemy,
     }
     data = loginc(data_to_fight)
     return data
