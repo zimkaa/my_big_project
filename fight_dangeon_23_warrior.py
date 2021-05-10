@@ -48,12 +48,13 @@ def use_mp(magic_in, alchemy, my_mp, ina, my_od, mp_need):
     not_alchemy = [
         "279", "277", "207", "242", "208", "205", "206", "269", "270", "320",
         "375", "376", "381", "382", "477", "478", "479", "483", "482", "265",
-        "266",
+        "266", "385", "388", "280",
     ]
     magic = []
     for obj in magic_in:
         if obj not in not_alchemy:
             magic.append(obj)
+    logger.error(f"magic {magic}")
     if not magic:
         return {"ina": ina, "my_od": my_od}
     dict_name_boost_mp = {
@@ -77,13 +78,21 @@ def use_mp(magic_in, alchemy, my_mp, ina, my_od, mp_need):
                 query.append(f"{element}_{alchemy[num]}@")
                 list_element.append(element)
     new_df = pd.DataFrame()
+    logger.info(f"list_element {list_element}")
     for name in list_element:
         # result = None
         result = df[df['code'] == name]
         # if result:
         #     new_df = new_df.append(result, ignore_index=True)
         new_df = new_df.append(result, ignore_index=True)
+    else:
+        logger.error("NO POTION MP!!!!!!!!!!!")
+        logger.error("NO POTION MP!!!!!!!!!!!")
+        # error = Exception("NO POTION MP!!!!!!!!!!!!!!!")
+        # raise error
+        return {"ina": ina, "my_od": my_od}
     new_df['query'] = query
+    print(f"new_df \n{new_df}")
     sorted_list_df = new_df.sort_values(by='priority')
     if my_mp <= mp_need:
         logger.info("---------------Use MP--------------------")
@@ -174,7 +183,7 @@ def arhi_lich_warrior(lives_g2, magic_in, my_od, my_mp,
     ina = data_use_mp['ina']
     my_od = data_use_mp['my_od']
     bot_lvl = int(bot_lvl)
-    if bot_lvl >= 30:
+    if bot_lvl >= 23:
         stable_mag_hits = {
             'name': [
                 "Mind Blast", "Spirit Arrow",
@@ -646,8 +655,8 @@ def main():
         logger.info("ip IS proxy YES")
         connect = set_session()
         html = log_in(connect)
-        fighting(connect, html, False)
-        # fighting(connect, html)
+        # fighting(connect, html, False)
+        fighting(connect, html)
 
 
 if __name__ == '__main__':

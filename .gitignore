@@ -6,3 +6,4 @@ setup.cfg
 __pycache__/
 cookies/
 *.zip
+*.json

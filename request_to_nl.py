@@ -11,6 +11,8 @@ def set_session():
     Создаем сессию
     """
     session = requests.Session()
+    session.proxies.update(config.PROXYES)
+    session.headers.update(config.HEADER)
     return session
 
 
@@ -18,7 +20,20 @@ def get_html(session, site_url, head=None, proxy=None, data=None):
     """
     Гет запрос
     """
-    result = session.get(site_url, proxies=proxy, headers=head, params=data)
+    # result = session.get(site_url, proxies=proxy, headers=head, params=data)
+    # result = session.get(site_url, headers=head, params=data)
+    # now = datetime.now().strftime('%d-%m-%Y')
+    # name = f"{config.HOME_DIR}\\{now}.txt"
+    # if os.path.exists(os.path.join(os.getcwd(), name)):
+    #     logger.error("I'am using cookies")
+    #     string = ""
+    #     with open(name, "r", encoding="cp1251") as data:
+    #         for line in data:
+    #             string += line
+    #         dict2 = eval(string)
+    #     for cookies in dict2:
+    #         session.cookies.set(**cookies)
+    result = session.get(site_url, params=data)
     return result
 
 
@@ -26,7 +41,20 @@ def post_html(session, site_url, head=None, proxy=None, data=None):
     """
     Пост запрос
     """
-    result = session.post(site_url, proxies=proxy, headers=head, data=data)
+    # result = session.post(site_url, proxies=proxy, headers=head, data=data)
+    # result = session.post(site_url, headers=head, data=data)
+    # now = datetime.now().strftime('%d-%m-%Y')
+    # name = f"{config.HOME_DIR}\\{now}.txt"
+    # if os.path.exists(os.path.join(os.getcwd(), name)):
+    #     logger.error("I'am using cookies")
+    #     string = ""
+    #     with open(name, "r", encoding="cp1251") as data:
+    #         for line in data:
+    #             string += line
+    #         dict2 = eval(string)
+    #     for cookies in dict2:
+    #         session.cookies.set(**cookies)
+    result = session.post(site_url, data=data)
     return result
 
 
@@ -48,12 +76,12 @@ def my_ip(proxies=None):
     return answer.text
 
 
-def log_in(connect):
+def log_in(my_connect):
     """
     Возвращает текст в виде джейсон текста после логина
     """
-    logger.add("requests.log", format="{time} {level} {message}",
-               level="DEBUG", rotation="10 MB", compression="zip")
+    # logger.add("requests.log", format="{time} {level} {message}",
+    #            level="DEBUG", rotation="10 MB", compression="zip")
     now = datetime.now().strftime('%d-%m-%Y')
     name = f"{config.HOME_DIR}\\{now}.txt"
     if os.path.exists(os.path.join(os.getcwd(), name)):
@@ -64,24 +92,27 @@ def log_in(connect):
                 string += line
             dict2 = eval(string)
         for cookies in dict2:
-            connect.cookies.set(**cookies)
+            my_connect.cookies.set(**cookies)
         html = get_html(
-            connect, config.URL_MAIN, config.HEADER, config.PROXYES,
+            my_connect, config.URL_MAIN, config.HEADER, config.PROXYES,
         )
     else:
         logger.error("First loging for day")
-        get_html(connect, config.URL, config.HEADER, config.PROXYES)
+        get_html(my_connect, config.URL, config.HEADER, config.PROXYES)
         post_html(
-            connect, config.URL_GAME, config.HEADER,
+            my_connect, config.URL_GAME, config.HEADER,
             config.PROXYES, config.DATA,
         )
         cookies_dict = [
-            {"domain": key.domain, "name": key.name, "path": key.path, "value": key.value}
-            for key in connect.cookies
+            {"domain": key.domain, "name": key.name,
+             "path": key.path, "value": key.value}
+            for key in my_connect.cookies
         ]
         make_file(str(cookies_dict), "cookies")
+        for cookies in cookies_dict:
+            my_connect.cookies.set(**cookies)
         html = get_html(
-            connect, config.URL_MAIN, config.HEADER, config.PROXYES,
+            my_connect, config.URL_MAIN, config.HEADER, config.PROXYES,
         )
     return html
 

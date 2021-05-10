@@ -1,4 +1,5 @@
 from decimal import Decimal
+import collections
 import json
 import re
 from time import sleep
@@ -7,7 +8,8 @@ from loguru import logger
 
 import config
 # from fight import fighting
-from fight_dangeon_24 import fighting
+# from fight_dangeon_24 import fighting
+from fight_dangeon_23_warrior import fighting
 from request_to_nl import get_html, post_html, get_data
 
 
@@ -19,14 +21,14 @@ REVERSE_WAYS = {
     'moveUp': "moveDown",
     'moveRight': "moveLeft",
     'moveDown': "moveUp",
-    'moveLeft': "moveRight"
+    'moveLeft': "moveRight",
 }
 
 REVERSE_WAYS_SHORT = {
     'u': "d",
     'r': "l",
     'd': "u",
-    'l': "r"
+    'l': "r",
 }
 
 NAME_WAY = {
@@ -34,21 +36,21 @@ NAME_WAY = {
     'moveRight': "r",
     'moveDown': "d",
     'moveLeft': "l",
-    '': 'None'
+    '': "None",
 }
 
 CHANGE_NAME = {
     "moveDown": "openDown",
     "moveLeft": "openLeft",
     "moveUp": "openUp",
-    "moveRight": "openRight"
+    "moveRight": "openRight",
 }
 
 CHANGE_NAME_PORT = {
     "openDown": "moveDown",
     "openLeft": "moveLeft",
     "openUp": "moveUp",
-    "openRight": "moveRight"
+    "openRight": "moveRight",
 }
 
 
@@ -81,9 +83,17 @@ def ways_to_door(connect, js_obj, way: str):
         [action] = re.findall(first_part, way)
         second_part = r"[A-Z][a-z]+"
         [direction] = re.findall(second_part, way)
-        url = config.URL_EVENT + "?type=dungeon"
-        url += f"&action={action}&direction={direction.lower()}&vcode={vcode}"
-        html = post_html(connect, url, config.HEADER, config.PROXYES)
+        # url = config.URL_EVENT + "?type=dungeon"
+        # url += f"&action={action}&direction={direction.lower()}&vcode={vcode}"
+        # html = post_html(connect, url, config.HEADER, config.PROXYES)
+        data = {
+            "type": "dungeon",
+            "action": action,
+            "direction": direction.lower(),
+            "vcode": vcode,
+        }
+        html = post_html(connect, config.URL_EVENT,
+                         config.HEADER, config.PROXYES, data)
         sleep(5.5)
         js_obj = check_pickup(connect, json.loads(html.text))
         if js_obj['a'].get('attack'):
@@ -92,7 +102,8 @@ def ways_to_door(connect, js_obj, way: str):
             """
             html = get_html(connect, config.URL_MAIN,
                             config.HEADER, config.PROXYES)
-            js_obj = restoring_mana_and_hp(connect, html)
+            healing = 0.99
+            js_obj = restoring_mana_and_hp(connect, html, healing)
 
             js_obj = is_attack(connect, js_obj)
     else:
@@ -119,9 +130,17 @@ def ways_to_port(connect, js_obj, way: str):
         [action] = re.findall(first_part, way)
         second_part = r"[A-Z][a-z]+"
         [direction] = re.findall(second_part, way)
-        url = config.URL_EVENT + "?type=dungeon"
-        url += f"&action={action}&direction={direction.lower()}&vcode={vcode}"
-        html = post_html(connect, url, config.HEADER, config.PROXYES)
+        # url = config.URL_EVENT + "?type=dungeon"
+        # url += f"&action={action}&direction={direction.lower()}&vcode={vcode}"
+        # html = post_html(connect, url, config.HEADER, config.PROXYES)
+        data = {
+            "type": "dungeon",
+            "action": action,
+            "direction": direction.lower(),
+            "vcode": vcode,
+        }
+        html = post_html(connect, config.URL_EVENT,
+                         config.HEADER, config.PROXYES, data)
         sleep(5.5)
         js_obj = check_pickup(connect, json.loads(html.text))
     else:
@@ -145,11 +164,31 @@ def ways_to_go(connect, js_obj, way: str):
         [action] = re.findall(first_part, way)
         second_part = r"[A-Z][a-z]+"
         [direction] = re.findall(second_part, way)
-        url = config.URL_EVENT + "?type=dungeon"
-        url += f"&action={action}&direction={direction.lower()}&vcode={vcode}"
-        html = post_html(connect, url, config.HEADER, config.PROXYES)
+        # url = config.URL_EVENT + "?type=dungeon"
+        # url += f"&action={action}&direction={direction.lower()}&vcode={vcode}"
+        # html = post_html(connect, url, config.HEADER, config.PROXYES)
+        data = {
+            "type": "dungeon",
+            "action": action,
+            "direction": direction.lower(),
+            "vcode": vcode,
+        }
+        html = post_html(connect, config.URL_EVENT,
+                         config.HEADER, config.PROXYES, data)
         sleep(5.5)
-        js_obj = is_attack(connect, json.loads(html.text))
+        js_obj = check_pickup(connect, json.loads(html.text))
+        if js_obj['a'].get('attack'):
+            """
+            Поднимаем ХП
+            """
+            html = get_html(connect, config.URL_MAIN,
+                            config.HEADER, config.PROXYES)
+            healing = 0.10
+            js_obj = restoring_mana_and_hp(connect, html, healing)
+
+            js_obj = is_attack(connect, js_obj)
+
+        # js_obj = is_attack(connect, json.loads(html.text))
     else:
         logger.info(f"-----go-----NO CELL TO MOVING------ \
             '{way.upper()}' ----------I THINK IT'S DOOR------")
@@ -159,7 +198,7 @@ def ways_to_go(connect, js_obj, way: str):
     return js_obj
 
 
-def restoring_mana_and_hp(connect, html):
+def restoring_mana_and_hp(connect, html, healing):
     soup = get_data(html)
     elementos = soup.find(language="JavaScript")
     text = str(elementos).split('\n')
@@ -169,14 +208,16 @@ def restoring_mana_and_hp(connect, html):
     my_max_mp = Decimal(inshp[3])
     my_hp = Decimal(inshp[0])
     my_mp = Decimal(inshp[2])
-    min_hp = my_max_hp * Decimal(0.50)
-    min_mp = my_max_mp * Decimal(0.90)
+    # min_hp = my_max_hp * Decimal(0.99)
+    # min_mp = my_max_mp * Decimal(0.99)
+    min_hp = my_max_hp * Decimal(healing)
+    min_mp = my_max_mp * Decimal(healing)
     count_hp = 0
     count_mp = 0
     if my_hp <= min_hp:
-        count_hp = Decimal((min_hp - my_hp) / 500).quantize(Decimal('1'))
+        count_hp = Decimal((min_hp - my_hp) / 100).quantize(Decimal('1'))
     if my_mp <= min_mp:
-        count_mp = Decimal((min_mp - my_mp) / 500).quantize(Decimal('1'))
+        count_mp = Decimal((min_mp - my_mp) / 100).quantize(Decimal('1'))
     if count_hp >= count_mp:
         count = count_hp
     else:
@@ -187,21 +228,29 @@ def restoring_mana_and_hp(connect, html):
         logger.error(f"count {count}")
         js_obj = get_satatus(connect, html)
         for _ in range(int(count)):
-            key = "useWeapon.w27_521"  # BIG MP!!!
-            # key = "useWeapon.w27_309"  # 309 --- Зелье Энергии
+            # key = "useWeapon.w27_521"  # BIG MP!!!
+            key = "useWeapon.w27_309"  # 309 --- Зелье Энергии
             js_obj['a'][key]
             item = key.replace('useWeapon.', '')
             vcode = js_obj['a'].get(key)
-            url_part = f"?type=dungeon&action=useWeapon&item={item}&vcode={vcode}"
-            url = config.URL_EVENT + url_part
-            html = post_html(connect, url, config.HEADER, config.PROXYES)
-            logger.error("use weapon useWeapon.w27_521 BIG MP!!!")
-            # logger.error("use weapon useWeapon.w27_309 potion energy!!!")
-            # js_obj = json.loads(html.text)
+            # url_part = f"?type=dungeon&action=useWeapon&item={item}&vcode={vcode}"
+            # url = config.URL_EVENT + url_part
+            # html = post_html(connect, url, config.HEADER, config.PROXYES)
+            data = {
+                "type": "dungeon",
+                "action": "useWeapon",
+                "item": item,
+                "vcode": vcode,
+            }
+            html = post_html(connect, config.URL_EVENT, config.HEADER, config.PROXYES, data)
+            # logger.error("use weapon useWeapon.w27_521 BIG MP!!!")
+            logger.error("use weapon useWeapon.w27_309 potion energy!!!")
+            js_obj = json.loads(html.text)
     else:
         logger.error(f"not count {count}")
-        # js_obj = get_satatus(connect, html)
-    return html
+        js_obj = get_satatus(connect, html)
+    # return html
+    return js_obj
 
 
 def is_attack(connect, js_obj):
@@ -212,8 +261,14 @@ def is_attack(connect, js_obj):
     if js_obj['a'].get('attack'):
         vcode = js_obj['a'].get('attack')
         url = config.URL_EVENT
-        url += f"?type=dungeon&action=attack&vcode={vcode}"
-        html = post_html(connect, url, config.HEADER, config.PROXYES)
+        # url += f"?type=dungeon&action=attack&vcode={vcode}"
+        # html = post_html(connect, url, config.HEADER, config.PROXYES)
+        data = {
+            "type": "dungeon",
+            "action": "attack",
+            "vcode": vcode,
+        }
+        html = post_html(connect, url, config.HEADER, config.PROXYES, data)
         html = get_html(connect, config.URL_MAIN,
                         config.HEADER, config.PROXYES)
         html = fighting(connect, html)
@@ -238,8 +293,14 @@ def go_to_next_level(connect, js_obj):
     if js_obj['a'].get('moveDeep'):
         vcode = js_obj['a'].get('moveDeep')
         url = config.URL_EVENT
-        url += f"?type=dungeon&action=moveDeep&vcode={vcode}"
-        html = post_html(connect, url, config.HEADER, config.PROXYES)
+        # url += f"?type=dungeon&action=moveDeep&vcode={vcode}"
+        # html = post_html(connect, url, config.HEADER, config.PROXYES)
+        data = {
+            "type": "dungeon",
+            "action": "moveDeep",
+            "vcode": vcode,
+        }
+        html = post_html(connect, url, config.HEADER, config.PROXYES, data)
         sleep(5.5)
         logger.info("--------NEXT LEVEL---------")
         return json.loads(html.text)
@@ -256,9 +317,17 @@ def check_pickup(connect, js_obj):
         if key.find("pickup") != -1:
             item = key.replace('pickup.', '')
             vcode = js_obj['a'].get(key)
-            url_part = f"?type=dungeon&action=pickup&item={item}&vcode={vcode}"
-            url = config.URL_EVENT + url_part
-            html = post_html(connect, url, config.HEADER, config.PROXYES)
+            # url_part = f"?type=dungeon&action=pickup&item={item}&vcode={vcode}"
+            # url = config.URL_EVENT + url_part
+            # html = post_html(connect, url, config.HEADER, config.PROXYES)
+            data = {
+                "type": "dungeon",
+                "action": "pickup",
+                "item": item,
+                "vcode": vcode,
+            }
+            html = post_html(connect, config.URL_EVENT,
+                             config.HEADER, config.PROXYES, data)
             logger.info('pick up something')
             return json.loads(html.text)
     return js_obj
@@ -272,15 +341,13 @@ def parse_dungeon(soup):
     text = str(elementos).split('\n')
     var_obj_actions = text[9].replace('var objActions = ', '').replace(';', '')
     actions = json.loads(var_obj_actions)
-    return f"?type=dungeon&action=getStatus&vcode={actions.get('getStatus')}"
-
-
-def parse_status(js_obj):
-    """
-    Получаем ссылку на стату чтобы в будущем получать только JSON
-    """
-    actions = js_obj['a']
-    return f"?type=dungeon&action=getStatus&vcode={actions.get('getStatus')}"
+    # return f"?type=dungeon&action=getStatus&vcode={actions.get('getStatus')}"
+    data = {
+        "type": "dungeon",
+        "action": "getStatus",
+        "vcode": actions.get('getStatus'),
+    }
+    return data
 
 
 def get_satatus(connect, html):
@@ -289,8 +356,10 @@ def get_satatus(connect, html):
     """
     soup = get_data(html)
     status_url = config.URL_EVENT
-    status_url += parse_dungeon(soup)
-    html = post_html(connect, status_url, config.HEADER, config.PROXYES)
+    # status_url += parse_dungeon(soup)
+    # html = post_html(connect, status_url, config.HEADER, config.PROXYES)
+    data = parse_dungeon(soup)
+    html = post_html(connect, status_url, config.HEADER, config.PROXYES, data)
     return json.loads(html.text)
 
 
@@ -302,7 +371,7 @@ def go_to_this_cell(variant):
         'u': "moveUp",
         'r': "moveRight",
         'd': "moveDown",
-        'l': "moveLeft"
+        'l': "moveLeft",
     }
     return var_dict[variant]
 
@@ -677,6 +746,12 @@ def is_floor(js_obj) -> int:
     Текущий этаж
     """
     return js_obj['s']['floor']
+
+
+def get_map(js_obj):
+    js_obj['s']['map']
+    logger.info(js_obj['s']['map'])
+    # return js_obj['s']['map']
 
 
 # @logger.catch()
