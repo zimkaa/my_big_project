@@ -1,13 +1,15 @@
 import collections
-import json
+from typing import Union
+
+# from loguru import logger
 
 
 class SimpleGraph:
     def __init__(self):
         self.edges = {}
 
-    def neighbors(self, id):
-        return self.edges[id]
+    def neighbors(self, number):
+        return self.edges[number]
 
 
 class Queue:
@@ -17,117 +19,76 @@ class Queue:
     def empty(self):
         return len(self.elements) == 0
 
-    def put(self, x):
-        self.elements.append(x)
+    def put(self, number):
+        self.elements.append(number)
 
     def get(self):
         return self.elements.popleft()
 
 
-# def create_actual_graph(js_obj):
-#     for num_row, row in enumerate(js_obj['s']['map']):
-#         if row:
-#             for num_cell, cell in enumerate(row):
-#                 if cell:
-#                     if cell['v'] == 11:
-#                         port = f"{num_row}{num_cell}"
-#     start = f"{js_obj['s']['x']}{js_obj['s']['y']}"
-#     goal = port
-
-#     def up(x, y):
-#         y -= 1
-#         return f"{x}{y}"
-
-#     def right(x, y):
-#         x += 1
-#         return f"{x}{y}"
-
-#     def down(x, y):
-#         y += 1
-#         return f"{x}{y}"
-
-#     def left(x, y):
-#         x -= 1
-#         return f"{x}{y}"
-
-#     new_cell = {}
-#     neighbors = {
-#         "u": up,
-#         "r": right,
-#         "d": down,
-#         "l": left,
-#     }
-#     for num_row, row in enumerate(js_obj['s']['map']):
-#         for num_cell, cell in enumerate(row):
-#             if cell['p']:
-#                 for i in cell['p']:
-#                     position = f"{num_row}{num_cell}"
-#                     condition = new_cell.get(position)
-#                     x = num_row
-#                     y = num_cell
-#                     if condition:
-#                         new_cell[position].append(neighbors[i](x, y))
-#                     else:
-#                         new_cell[position] = [neighbors[i](x, y)]
-#     return new_cell
-
-#     class SimpleGraph:
-#         def __init__(self):
-#             self.edges = {}
-
-#         def neighbors(self, id):
-#             return self.edges[id]
+def up(coord_x: int, coord_y: int) -> str:
+    coord_y -= 1
+    return f"{coord_x}{coord_y}"
 
 
-#     class Queue:
-#         def __init__(self):
-#             self.elements = collections.deque()
-
-#         def empty(self):
-#             return len(self.elements) == 0
-
-#         def put(self, x):
-#             self.elements.append(x)
-
-#         def get(self):
-#             return self.elements.popleft()
-
-#     graph = SimpleGraph()
-#     graph.edges = new_cell
-
-#     def breadth_first_search_3(graph, start, goal):
-#         # печать того, что мы нашли
-#         frontier = Queue()
-#         frontier.put(start)
-#         came_from = {}
-#         came_from[start] = None
-
-#         while not frontier.empty():
-#             current = frontier.get()
-#             if current == goal:
-#                 print("break")
-#                 break
-#             for next_step in graph.neighbors(current):
-#                 if next_step not in came_from:
-#                     frontier.put(next_step)
-#                     came_from[next_step] = current
-#         return came_from
-
-#     def reconstruct_path(came_from, start, goal):
-#         current = goal
-#         path = [current]
-#         while current != start:
-#             current = came_from[current]
-#             path.append(current)
-#         path.reverse() # необязательно
-#         return path
-
-#     came_from = breadth_first_search_3(graph, start, goal)
-#     may_be_go = reconstruct_path(came_from, start, goal)
-#     return may_be_go
+def right(coord_x: int, coord_y: int) -> str:
+    coord_x += 1
+    return f"{coord_x}{coord_y}"
 
 
-def breadth_first_search(graph, start, goal):
+def down(coord_x: int, coord_y: int) -> str:
+    coord_y += 1
+    return f"{coord_x}{coord_y}"
+
+
+def left(coord_x: int, coord_y: int) -> str:
+    coord_x -= 1
+    return f"{coord_x}{coord_y}"
+
+
+def create_neighbors_dict(js_obj: object) -> dict:
+    neighbors_dict = {}
+    neighbors = {
+        "u": up,
+        "r": right,
+        "d": down,
+        "l": left,
+    }
+    key = False
+    if js_obj['s']['own']:
+        key = True
+    for num_row, row in enumerate(js_obj['s']['map']):
+        for num_cell, cell in enumerate(row):
+            if cell:
+                if cell['p']:
+                    doors = cell.get('doors')
+                    if doors:
+                        for way in "urdl":
+                            dell_way = doors.get(way)
+                            if dell_way:
+                                if not key:
+                                    cell['p'] = cell['p'].replace(way, "")
+                    for i in cell['p']:
+                        position = f"{num_row}{num_cell}"
+                        condition = neighbors_dict.get(position)
+                        coord_x = num_row
+                        coord_y = num_cell
+                        if condition:
+                            neighbors_dict[position].append(
+                                neighbors[i](coord_x, coord_y))
+                        else:
+                            neighbors_dict[position] = [
+                                neighbors[i](coord_x, coord_y)]
+    return neighbors_dict
+
+
+def get_graph(js_obj: object) -> SimpleGraph:
+    graph = SimpleGraph()
+    graph.edges = create_neighbors_dict(js_obj)
+    return graph
+
+
+def breadth_first_search(graph: object, start: str, goal: str) -> dict:
     frontier = Queue()
     frontier.put(start)
     came_from = {}
@@ -136,12 +97,10 @@ def breadth_first_search(graph, start, goal):
     while not frontier.empty():
         current = frontier.get()
         if current == goal:
-            print("break")
             break
         try:
             condition = graph.neighbors(current)
         except Exception:
-            print(f"go_to_new_cell {current}")
             came_from.pop(current)
             not_visited.append(current)
         else:
@@ -152,7 +111,7 @@ def breadth_first_search(graph, start, goal):
     return came_from
 
 
-def breadth_first_search_2(graph, start):
+def breadth_first_search_2(graph: SimpleGraph, start: str) -> list:
     frontier = Queue()
     frontier.put(start)
     came_from = {}
@@ -160,13 +119,9 @@ def breadth_first_search_2(graph, start):
     not_visited = []
     while not frontier.empty():
         current = frontier.get()
-        # if current == goal:
-        #     print("break")
-        #     break
         try:
             condition = graph.neighbors(current)
         except Exception:
-            print(f"go_to_new_cell {current}")
             came_from.pop(current)
             not_visited.append(current)
         else:
@@ -174,115 +129,91 @@ def breadth_first_search_2(graph, start):
                 if next_step not in came_from and next_step not in not_visited:
                     frontier.put(next_step)
                     came_from[next_step] = True
-    return {"came_from": came_from, "not_visited": not_visited}
+    return not_visited
 
 
-def reconstruct_path(came_from, start, goal):
+def uncharted_path(js_obj: object) -> list:
+    start = f"{js_obj['s']['x']}{js_obj['s']['y']}"
+    graph = get_graph(js_obj)
+    not_visited = breadth_first_search_2(graph, start)
+    return not_visited
+
+
+def reconstruct_path(came_from: dict, start: str, goal: str) -> list:
     current = goal
     path = [current]
-    print(f"current  ---  {current}")
     while current != start:
         current = came_from[current]
         path.append(current)
-    path.remove(start)  # необязательно
-    path.reverse()  # необязательно
+    path.remove(start)
+    path.reverse()
     return path
 
 
-def up(x, y):
-    y -= 1
-    return f"{x}{y}"
-
-
-def right(x, y):
-    x += 1
-    return f"{x}{y}"
-
-
-def down(x, y):
-    y += 1
-    return f"{x}{y}"
-
-
-def left(x, y):
-    x -= 1
-    return f"{x}{y}"
-
-
-def create_neighbors_dict(js_obj):
-    neighbors_dict = {}
-    neighbors = {
-        "u": up,
-        "r": right,
-        "d": down,
-        "l": left,
-    }
-    for num_row, row in enumerate(js_obj['s']['map']):
-        for num_cell, cell in enumerate(row):
-            if cell:
-                if cell['p']:
-                    for i in cell['p']:
-                        position = f"{num_row}{num_cell}"
-                        condition = neighbors_dict.get(position)
-                        x = num_row
-                        y = num_cell
-                        if condition:
-                            neighbors_dict[position].append(neighbors[i](x, y))
-                        else:
-                            neighbors_dict[position] = [neighbors[i](x, y)]
-    return neighbors_dict
-
-
-def get_graph(js_obj):
-    graph = SimpleGraph()
-    graph.edges = create_neighbors_dict(js_obj)
-    return graph
-
-
-def get_port_cell(js_obj):
-    for num_row, row in enumerate(js_obj['s']['map']):
-        if row:
-            for num_cell, cell in enumerate(row):
-                if cell:
-                    # print(cell)
-                    # print(type(cell))
-                    if cell['v'] == 11:
-                        port_cell = f"{num_row}{num_cell}"
-                        return port_cell
-
-
-def main(js_obj):
-    print(js_obj)
-    port = get_port_cell(js_obj)
-    print(f"port {port}")
+def find_near_way(js_obj: object, stop: list) -> list:
+    """
+    Find nearest way
+    """
     start = f"{js_obj['s']['x']}{js_obj['s']['y']}"
-    print(f"start {start}")
     graph = get_graph(js_obj)
-    came_from = breadth_first_search(graph, start, port)
-    way = reconstruct_path(came_from, start, port)
-    print(f"way {way} len(way) {len(way)}")
-    if len(way) <= 4:
-        print("go_to_door")
+    ways = []
+    lenth = 25
+    go_to = ''
+    for step in stop:
+        came_from = breadth_first_search(graph, start, step)
+        ways.append(reconstruct_path(came_from, start, step))
+    for way in ways:
+        if len(way) <= lenth:
+            lenth = len(way)
+            go_to = way
+    return go_to
 
 
-def uncharted_path(js_obj):
-    print(js_obj)
-    # port = get_port_cell(js_obj)
-    # print(f"port {port}")
+def find_way_to(js_obj: object, step: str) -> list[str]:
+    """
+    Create ways list
+    """
     start = f"{js_obj['s']['x']}{js_obj['s']['y']}"
-    print(f"start {start}")
     graph = get_graph(js_obj)
-    data = breadth_first_search_2(graph, start)
-    came_from = data["came_from"]
-    not_visited = data["not_visited"]
-    print(f"came_from {came_from}")
-    print(f"not_visited {not_visited}")
-    # way = reconstruct_path(came_from, start, port)
-    return
+    came_from = breadth_first_search(graph, start, step)
+    ways = reconstruct_path(came_from, start, step)
+    return ways
 
 
-if __name__ == '__main__':
-    with open('my_map.json', 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    main(data)
-    # uncharted_path(data)
+def check_move(start_x: int, start_y: int, coord_x: int, coord_y: int) -> str:
+    """
+    Return way
+    :return: str like "moveDown"
+    """
+    if start_x > coord_x:
+        go = "moveLeft"
+    elif start_x < coord_x:
+        go = "moveRight"
+    elif start_y < coord_y:
+        go = "moveDown"
+    elif start_y > coord_y:
+        go = "moveUp"
+    return go
+
+
+def create_right_way(js_obj: object, go_to: Union[str, list[str]]) -> list:
+    """
+    Create list ways
+    """
+    move_list = []
+    start_x = js_obj['s']['x']
+    start_y = js_obj['s']['y']
+    if isinstance(go_to, str):
+        coord_x = int(go_to[0])
+        coord_y = int(go_to[1])
+        go = check_move(start_x, start_y, coord_x, coord_y)
+        move_list.append(go)
+    else:
+        for move in go_to:
+            coord_x = int(move[0])
+            coord_y = int(move[1])
+            go = check_move(start_x, start_y, coord_x, coord_y)
+            start_x = coord_x
+            start_y = coord_y
+            move_list.append(go)
+    return move_list

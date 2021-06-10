@@ -1,12 +1,25 @@
 from bs4 import BeautifulSoup
 from datetime import datetime
-from loguru import logger
-import os
 import requests
+
+# from loguru import logger
+
 import config
 
 
-def set_session():
+def my_ip(proxies: dict = None) -> str:
+    """
+    Get IP (need to chek proxye)
+    """
+    answer = requests.get(config.CHECKER_IP_SITE,
+                          headers=config.HEADER, proxies=proxies)
+    if answer.status_code != 200:
+        error = Exception("PROXY DON'T RESPONSE!!!")
+        raise error
+    return answer.text
+
+
+def set_session() -> requests.sessions.Session:
     """
     Создаем сессию
     """
@@ -16,49 +29,35 @@ def set_session():
     return session
 
 
-def get_html(session, site_url, head=None, proxy=None, data=None):
+def get_html(session: requests.sessions.Session, site_url: str, head=None,
+             proxy=None, data: dict = None) -> requests.models.Response:
     """
-    Гет запрос
+    Executing a get request
     """
-    # result = session.get(site_url, proxies=proxy, headers=head, params=data)
-    # result = session.get(site_url, headers=head, params=data)
-    # now = datetime.now().strftime('%d-%m-%Y')
-    # name = f"{config.HOME_DIR}\\{now}.txt"
-    # if os.path.exists(os.path.join(os.getcwd(), name)):
-    #     logger.error("I'am using cookies")
-    #     string = ""
-    #     with open(name, "r", encoding="cp1251") as data:
-    #         for line in data:
-    #             string += line
-    #         dict2 = eval(string)
-    #     for cookies in dict2:
-    #         session.cookies.set(**cookies)
-    result = session.get(site_url, params=data)
+    try:
+        result = session.get(site_url, params=data)
+    except Exception:
+        # requests.get("https://armorwp.com/message.php")
+        error = Exception("----PROXY CRASH----")
+        raise error
     return result
 
 
-def post_html(session, site_url, head=None, proxy=None, data=None):
+def post_html(session: requests.sessions.Session, site_url: str, head=None,
+              proxy=None, data: dict = None) -> requests.models.Response:
     """
-    Пост запрос
+    Executing a post request
     """
-    # result = session.post(site_url, proxies=proxy, headers=head, data=data)
-    # result = session.post(site_url, headers=head, data=data)
-    # now = datetime.now().strftime('%d-%m-%Y')
-    # name = f"{config.HOME_DIR}\\{now}.txt"
-    # if os.path.exists(os.path.join(os.getcwd(), name)):
-    #     logger.error("I'am using cookies")
-    #     string = ""
-    #     with open(name, "r", encoding="cp1251") as data:
-    #         for line in data:
-    #             string += line
-    #         dict2 = eval(string)
-    #     for cookies in dict2:
-    #         session.cookies.set(**cookies)
-    result = session.post(site_url, data=data)
+    try:
+        result = session.post(site_url, data=data)
+    except Exception:
+        # requests.get("https://armorwp.com/message.php")
+        error = Exception("----PROXY CRASH----")
+        raise error
     return result
 
 
-def get_data(html):
+def get_data(html: requests.models.Response) -> BeautifulSoup:
     """
     Получаем объект супа
     """
@@ -66,61 +65,25 @@ def get_data(html):
     return soup
 
 
-def my_ip(proxies=None):
+def log_in(my_connect: requests.Session) -> requests.models.Response:
     """
-    Получаем текущий IP сессии
+    Loggin to game
     """
-    answer = requests.get(
-        config.CHECKER_IP_SITE, headers=config.HEADER, proxies=proxies,
+    get_html(my_connect, config.URL, config.HEADER, config.PROXYES)
+    post_html(
+        my_connect, config.URL_GAME, config.HEADER,
+        config.PROXYES, config.DATA,
     )
-    return answer.text
-
-
-def log_in(my_connect):
-    """
-    Возвращает текст в виде джейсон текста после логина
-    """
-    # logger.add("requests.log", format="{time} {level} {message}",
-    #            level="DEBUG", rotation="10 MB", compression="zip")
-    now = datetime.now().strftime('%d-%m-%Y')
-    name = f"{config.HOME_DIR}\\{now}.txt"
-    if os.path.exists(os.path.join(os.getcwd(), name)):
-        logger.error("I'am using cookies")
-        string = ""
-        with open(name, "r", encoding="cp1251") as data:
-            for line in data:
-                string += line
-            dict2 = eval(string)
-        for cookies in dict2:
-            my_connect.cookies.set(**cookies)
-        html = get_html(
-            my_connect, config.URL_MAIN, config.HEADER, config.PROXYES,
-        )
-    else:
-        logger.error("First loging for day")
-        get_html(my_connect, config.URL, config.HEADER, config.PROXYES)
-        post_html(
-            my_connect, config.URL_GAME, config.HEADER,
-            config.PROXYES, config.DATA,
-        )
-        cookies_dict = [
-            {"domain": key.domain, "name": key.name,
-             "path": key.path, "value": key.value}
-            for key in my_connect.cookies
-        ]
-        make_file(str(cookies_dict), "cookies")
-        for cookies in cookies_dict:
-            my_connect.cookies.set(**cookies)
-        html = get_html(
-            my_connect, config.URL_MAIN, config.HEADER, config.PROXYES,
-        )
+    html = get_html(
+        my_connect, config.URL_MAIN, config.HEADER, config.PROXYES,
+    )
     return html
 
 
-def make_file(answer, name):
+def make_file(text: str) -> None:
     """
-    Сохраняем результат в файл для дальнейшей оценки
+    Write data to file
     """
     now = datetime.now().strftime('%d-%m-%Y')
     with open(f"{config.HOME_DIR}\\{now}.txt", "w", encoding="cp1251") as file:
-        file.write(answer)
+        file.write(text)
