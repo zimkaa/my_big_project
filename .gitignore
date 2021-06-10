@@ -8,3 +8,6 @@ cookies/
 *.zip
 *.json
 *.txt
+
+fight.py
+battle_on_nature.py
