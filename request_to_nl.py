@@ -18,7 +18,7 @@ def send_telegram(text: str) -> None:
         data={
             "chat_id": channel_id,
             "text": text,
-        }
+        },
     )
     if query.status_code != 200:
         raise Exception("Some trouble with TG")
