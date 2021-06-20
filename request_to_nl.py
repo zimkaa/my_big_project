@@ -7,6 +7,23 @@ import requests
 import config
 
 
+def send_telegram(text: str) -> None:
+    token = config.TG_TOKEN
+    url = "https://api.telegram.org/bot"
+    channel_id = config.CHANNEL_ID
+    url += token
+    method = url + "/sendMessage"
+    query = requests.post(
+        method,
+        data={
+            "chat_id": channel_id,
+            "text": text,
+        }
+    )
+    if query.status_code != 200:
+        raise Exception("Some trouble with TG")
+
+
 def my_ip(proxies: dict = None) -> str:
     """
     Get IP (need to chek proxye)
@@ -14,8 +31,9 @@ def my_ip(proxies: dict = None) -> str:
     answer = requests.get(config.CHECKER_IP_SITE,
                           headers=config.HEADER, proxies=proxies)
     if answer.status_code != 200:
-        error = Exception("PROXY DON'T RESPONSE!!!")
-        raise error
+        text = "PROXY DON'T RESPONSE!!!"
+        send_telegram(text)
+        raise Exception(text)
     return answer.text
 
 
@@ -37,9 +55,9 @@ def get_html(session: requests.sessions.Session, site_url: str, head=None,
     try:
         result = session.get(site_url, params=data)
     except Exception:
-        # requests.get("https://armorwp.com/message.php")
-        error = Exception("----PROXY CRASH----")
-        raise error
+        text = "----PROXY CRASH----"
+        send_telegram(text)
+        raise Exception(text)
     return result
 
 
@@ -51,9 +69,9 @@ def post_html(session: requests.sessions.Session, site_url: str, head=None,
     try:
         result = session.post(site_url, data=data)
     except Exception:
-        # requests.get("https://armorwp.com/message.php")
-        error = Exception("----PROXY CRASH----")
-        raise error
+        text = "----PROXY CRASH----"
+        send_telegram(text)
+        raise Exception(text)
     return result
 
 

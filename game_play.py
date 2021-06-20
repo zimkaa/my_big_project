@@ -9,9 +9,9 @@ from loguru import logger
 
 import config
 # from fight_dangeon_24 import fighting
-# from fight_dangeon_23_warrior import fighting
-from mag_fight_dangeon_24 import fighting
-from request_to_nl import get_html, get_data, post_html
+from fight_dangeon_23_warrior import fighting
+# from mag_fight_dangeon_24 import fighting
+from request_to_nl import get_html, get_data, post_html, send_telegram
 from implementation import (
     up, right, down, create_right_way, left, find_way_to,
     find_near_way, uncharted_path,
@@ -110,9 +110,10 @@ def restoring_mana_and_hp(connect: object, html: object,
                 html = post_html(connect, config.URL_EVENT, config.HEADER,
                                  config.PROXYES, data)
             except Exception:
-                # requests.get("https://armorwp.com/custom.php?text=NO_POTION_MP_TURN")
-                error = Exception("----NO POTION MP!!!---")
-                raise error
+                text = "----NO POTION MP!!!---"
+                logger.error(text)
+                send_telegram(text)
+                raise Exception(text)
             if key == "useWeapon.w27_521":
                 logger.error(f"use weapon {key} 521: BIG MP!!!")
             else:
@@ -355,9 +356,10 @@ def going(connect: object, js_obj: object, way: str, iter_number: int) -> dict:
     oil = is_oil(js_obj)
     alive = is_alive(js_obj)
     if alive == 0 or oil == 0:
-        # requests.get("https://armorwp.com/message.php")
-        error = Exception(f"Can't move oil - {oil} alive - {alive}")
-        raise error
+        text = f"Can't move oil - {oil} alive - {alive}"
+        logger.error(text)
+        send_telegram(text)
+        raise Exception(text)
     if js_obj['a'].get(way):
         vcode = js_obj['a'].get(way)
         first_part = r"^[a-z]+[^A-Z]"
@@ -420,10 +422,12 @@ def going(connect: object, js_obj: object, way: str, iter_number: int) -> dict:
                 html = get_html(connect, config.URL_MAIN,
                                 config.HEADER, config.PROXYES)
                 # requests.get("https://armorwp.com/custom.php?text=BOSS_TURN")
-                # error = Exception("----BOSSSSS----")
-                # raise error
                 healing = 0.99
                 js_obj = restoring_mana_and_hp(connect, html, healing)
+                text = "----BOSSSSS----"
+                logger.error(text)
+                send_telegram(text)
+                raise Exception(text)
                 js_obj = is_attack(connect, js_obj)
                 boss = True
                 logger.info(f"boss {boss}")
@@ -431,9 +435,10 @@ def going(connect: object, js_obj: object, way: str, iter_number: int) -> dict:
             logger.info(f"---- Trouble - NO KEY---'{way.upper()}' --------")
             text = string_info(js_obj)
             logger.info(text)
-            # requests.get("https://armorwp.com/custom.php?text=UNKNOWN_TROUBLE")
-            error = Exception(f"STOP ITER Trouble NO KEY BUT DOOR----'{way}'")
-            raise error
+            text = f"STOP ITER Trouble NO KEY BUT DOOR----'{way}'"
+            logger.error(text)
+            send_telegram(text)
+            raise Exception(text)
     return {"js_obj": js_obj, "iter_number": iter_number}
 
 
@@ -567,8 +572,10 @@ def game(connect: object, html: object) -> str:
                     ways_to_door = create_right_way(js_obj, way_to)
                     if len(ways_to_door) < 5:
                         logger.info("neeed to go to door")
-                        # error = Exception(f"neeed to go to door {start}")
-                        # raise error
+                        # text = f"neeed to go to door {start}"
+                        # logger.error(text)
+                        # send_telegram(text)
+                        # raise Exception(text)
                         data = going_to_reward(
                             connect, js_obj, ways_to_door, iter_number,
                         )
@@ -617,4 +624,6 @@ def game(connect: object, html: object) -> str:
 
         floor = is_floor(js_obj)
         logger.info(f"\nfloor - '{floor}'")
-    return "All Done"
+    text = "All Done"
+    send_telegram(text)
+    return text
